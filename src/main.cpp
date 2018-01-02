@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(1024, 768, "Hatchet", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(1024, 768, "GoldSrc Textures", NULL, NULL);
     if (window == 0)
     {
         glfwTerminate();
