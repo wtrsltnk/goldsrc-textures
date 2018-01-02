@@ -55,7 +55,7 @@ void Program::populateTextureManagerFromOptions(std::string const &hlExecutableP
 bool Program::SetUp()
 {
     ImGuiIO &io = ImGui::GetIO();
-    if (io.Fonts->AddFontFromFileTTF("../hatchet/imgui/extra_fonts/Roboto-Medium.ttf", 16.0f) == nullptr)
+    if (io.Fonts->AddFontFromFileTTF("Roboto-Medium.ttf", 16.0f) == nullptr)
     {
         return false;
     }
@@ -64,13 +64,13 @@ bool Program::SetUp()
     config.MergeMode = true;
 
     static const ImWchar icons_ranges_fontawesome[] = {0xf000, 0xf3ff, 0};
-    if (io.Fonts->AddFontFromFileTTF("../hatchet/fontawesome-webfont.ttf", 22.0f, &config, icons_ranges_fontawesome) == nullptr)
+    if (io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 22.0f, &config, icons_ranges_fontawesome) == nullptr)
     {
         return false;
     }
 
     static const ImWchar icons_ranges_googleicon[] = {0xe000, 0xeb4c, 0};
-    if (io.Fonts->AddFontFromFileTTF("../hatchet/MaterialIcons-Regular.ttf", 24.0f, &config, icons_ranges_googleicon) == nullptr)
+    if (io.Fonts->AddFontFromFileTTF("MaterialIcons-Regular.ttf", 24.0f, &config, icons_ranges_googleicon) == nullptr)
     {
         return false;
     }
@@ -198,6 +198,8 @@ void Program::ScrollCallback(GLFWwindow *window, double x, double y)
 
 void Program::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
+    ImGui_ImplGlfwGL3_MouseButtonCallback(window, button, action, mods);
+
     auto app = static_cast<Program *>(glfwGetWindowUserPointer(window));
 
     if (app != nullptr)

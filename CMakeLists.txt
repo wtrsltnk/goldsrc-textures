@@ -54,3 +54,11 @@ target_link_libraries(goldsrc-textures
     ${OPENGL_LIBRARIES}
     glfw
     )
+
+ADD_CUSTOM_COMMAND(
+    TARGET goldsrc-textures
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/lib/imgui/extra_fonts/Roboto-Medium.ttf ${CMAKE_BINARY_DIR}/Roboto-Medium.ttf
+    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/fontawesome-webfont.ttf ${CMAKE_BINARY_DIR}/fontawesome-webfont.ttf
+    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/MaterialIcons-Regular.ttf ${CMAKE_BINARY_DIR}/MaterialIcons-Regular.ttf
+)
