@@ -2,6 +2,9 @@
 #include "wadfile.h"
 #include <GL/glextl.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 typedef struct sBSPMipTexHeader
 {
     char name[16];
@@ -16,18 +19,18 @@ WadTexture::WadTexture(std::string const &name, TexturePackage *package, unsigne
 {
 }
 
-bool WadTexture::upload()
+unsigned char* WadTexture::getPixels()
 {
     if (_miptexData == nullptr)
     {
-        return false;
+        return nullptr;
     }
 
     auto miptex = (tBSPMipTexHeader *)_miptexData;
 
     if (miptex->height <= 0 || miptex->height > 1024 || miptex->width <= 0 || miptex->width  > 1024)
     {
-        return false;
+        return nullptr;
     }
 
     _width = miptex->width;
@@ -61,16 +64,38 @@ bool WadTexture::upload()
         pixels[i * bpp + 3] = a;
     }
 
+    return pixels;
+}
+
+bool WadTexture::writeToFile(std::string const &filename)
+{
+    auto pixels = getPixels();
+    if (pixels == nullptr)
+    {
+        return false;
+    }
+
+    return stbi_write_bmp(filename.c_str(), width(), height(), 4, pixels);
+}
+
+bool WadTexture::upload()
+{
+    auto pixels = getPixels();
+    if (pixels == nullptr)
+    {
+        return false;
+    }
+
     glGenTextures(1, &_glId);
     glBindTexture(GL_TEXTURE_2D, _glId);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    delete[] pixels;
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    delete[] pixels;
 
     return true;
 }

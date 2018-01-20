@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
 #include <imgui_internal.h>
+
 #define SYSTEM_IO_FILEINFO_IMPLEMENTATION
 #include <system.io.fileinfo.h>
 
@@ -54,6 +55,9 @@ void Program::populateTextureManagerFromOptions(std::string const &hlExecutableP
 
 bool Program::SetUp()
 {
+    modal.show = false;
+    modal.message = "";
+
     ImGuiIO &io = ImGui::GetIO();
     if (io.Fonts->AddFontFromFileTTF("Roboto-Medium.ttf", 16.0f) == nullptr)
     {
@@ -98,8 +102,23 @@ void Program::renderGuiTextureView(Texture *texture)
             std::stringstream ss;
             ss << texture->name() << " (" << texture->width() << "x" << texture->height() << ")";
             ImGui::Text(ss.str().c_str());
-
-            auto aspect = glm::min((textureWidth - 50) / texture->width(), (state.height - 100) / texture->height());
+            ImGui::SameLine(ImGui::GetWindowWidth()-70);
+            if (ImGui::Button("Export", ImVec2(70, 30)))
+            {
+                if (exportTexture(texture))
+                {
+                    ImGui::OpenPopup("Messagebox");
+                }
+            }
+            bool open = true;
+            if (ImGui::BeginPopupModal("Messagebox", &open))
+            {
+                ImGui::Text("The texture is exported");
+                if (ImGui::Button("Close"))
+                    ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+            auto aspect = glm::min((textureWidth) / texture->width(), (state.height - 100) / texture->height());
             ImGui::Image((void *)texture->glId(), ImVec2(texture->width() * aspect, texture->height() * aspect));
         }
         ImGui::End();

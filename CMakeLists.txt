@@ -33,6 +33,7 @@ add_executable(goldsrc-textures
     src/program-texturebrowser.cpp
     src/program.h
     src/noc_file_dialog.cpp
+    include/stb_image_write.h
     include/noc_file_dialog.h
     )
 

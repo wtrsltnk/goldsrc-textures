@@ -24,12 +24,19 @@ struct app_state
     Texture *currentTexture = nullptr;
 };
 
+struct message_modal
+{
+    bool show;
+    std::string message;
+};
+
 class Program
 {
 private:
     GLFWwindow *_window;
 
     app_state state;
+    message_modal modal;
     TextureManager textures;
 
     void populateTextureManagerFromOptions(std::string const &hlExecutablePath);
@@ -41,6 +48,7 @@ private:
     void renderGuiTextureView(Texture *texture);
 
     bool openAsset();
+    bool exportTexture(Texture *texture);
     void quitApp();
 
 public:

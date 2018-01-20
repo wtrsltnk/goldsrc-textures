@@ -160,6 +160,11 @@ const char *noc_file_dialog_open(int flags,
     char szFile[260];       // buffer for file name
     int ret;
 
+    if (default_name != nullptr)
+    {
+        strcpy(szFile, default_name);
+    }
+
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.lpstrFile = szFile;

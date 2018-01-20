@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <noc_file_dialog.h>
 #include <streambuf>
+#include <system.io.path.h>
 
 void Program::renderGuiMenu()
 {
@@ -92,6 +93,15 @@ bool Program::openAsset()
     }
 
     return false;
+}
+
+bool Program::exportTexture(Texture *texture)
+{
+    System::IO::FileInfo package(texture->package()->filePath());
+
+    std::string defaultName = System::IO::Path::Combine(package.Directory().FullName(), texture->name() + ".bmp");
+
+    return texture->writeToFile(defaultName);
 }
 
 void Program::quitApp()

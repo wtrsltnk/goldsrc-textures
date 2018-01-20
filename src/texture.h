@@ -16,7 +16,8 @@ public:
     Texture(std::string const &name, class TexturePackage *package);
     virtual ~Texture();
 
-    virtual bool upload() {}
+    virtual bool writeToFile(std::string const &filename) { return false; }
+    virtual bool upload() { return false; }
     virtual void cleanup() {}
 
     std::string const &name() const;
