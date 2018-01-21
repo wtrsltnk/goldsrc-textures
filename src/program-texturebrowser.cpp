@@ -6,26 +6,27 @@
 Texture *Program::renderGuiTextureBrowser()
 {
     Texture *result = nullptr;
-    static char search_for[45];
+
+    std::lock_guard<std::mutex> lock(_stateMutex);
 
     ImGui::Begin("TextureBrowser", &state.show_texture_browser, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
     {
-        ImGui::SetWindowPos(ImVec2(0, 22));
-        ImGui::SetWindowSize(ImVec2(state.width > 700 ? 550 : 275, state.height - 22));
+        ImGui::SetWindowPos(ImVec2(0, menubarHeight));
+        ImGui::SetWindowSize(ImVec2(state.width > 700 ? 550 : 275, state.height - menubarHeight - statusbarHeight));
 
         ImGui::BeginChild("filter_textures", ImVec2(ImGui::GetWindowContentRegionWidth(), 30));
         ImGui::Text("Filter");
         ImGui::SameLine();
-        if (ImGui::InputText("##search_for", search_for, IM_ARRAYSIZE(search_for), ImGuiInputTextFlags_CharsUppercase))
+        if (ImGui::InputText("##search_for", state.search_for, IM_ARRAYSIZE(state.search_for), ImGuiInputTextFlags_CharsUppercase))
         {
-            state.foundTextures = textures.findTextures(search_for);
+            updateTextureBrowser();
         }
         ImGui::EndChild();
 
-        ImGui::BeginChild("stextures", ImVec2(ImGui::GetWindowContentRegionWidth(), state.height - 22 - 40));
+        ImGui::BeginChild("stextures", ImVec2(ImGui::GetWindowContentRegionWidth(), state.height - menubarHeight - statusbarHeight - 40));
         for (auto pair : state.foundTextures)
         {
-            if (ImGui::CollapsingHeader(pair.first.c_str()))
+            if (ImGui::CollapsingHeader(pair.first.c_str(), state.foundTextures.size() == 1 ? ImGuiTreeNodeFlags_DefaultOpen : 0))
             {
                 int i = 0;
                 for (auto texture : pair.second)

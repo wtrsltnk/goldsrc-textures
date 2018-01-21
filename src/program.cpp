@@ -7,6 +7,7 @@
 
 #define SYSTEM_IO_FILEINFO_IMPLEMENTATION
 #include <system.io.fileinfo.h>
+#include <system.io.path.h>
 
 #include <algorithm>
 #include <fstream>
@@ -14,11 +15,15 @@
 #include <sstream>
 #include <streambuf>
 #include <string>
+#include <thread>
 #include <vector>
 
 Program::Program(GLFWwindow *window)
-    : _window(window), _running(true)
+    : _window(window), _running(true), _statusProgress(-1.0f)
 {
+    std::lock_guard<std::mutex> lock(_stateMutex);
+    state.search_for[0] = '\0';
+
     glfwSetWindowUserPointer(this->_window, static_cast<void *>(this));
 }
 
@@ -27,30 +32,126 @@ Program::~Program()
     glfwSetWindowUserPointer(this->_window, nullptr);
 }
 
+void Program::updateTextureBrowser()
+{
+    std::lock_guard<std::mutex> lock(_stateMutex);
+
+    // this makes sure there are textures shown
+    state.foundTextures = textures.findTextures(state.search_for);
+}
+
+void Program::SetInputFile(System::IO::FileInfo const &file)
+{
+    if (file.Exists() && (file.Extension() == ".wad" || file.Extension() == ".WAD"))
+    {
+        addTexturesFromWad(file);
+    }
+
+    if (file.Exists() && (file.Extension() == ".bsp" || file.Extension() == ".BSP"))
+    {
+        addTexturesFromBsp(file);
+    }
+
+    if (file.Exists() && file.Name() == "hl.exe")
+    {
+        populateTextureManagerFromOptions(file);
+    }
+}
+
+void Program::addTexturesFromWad(System::IO::FileInfo const &filename)
+{
+    std::thread t([this, filename]() mutable {
+        setStatus(-1.0f, std::string("loading ") + filename.Name() + "...");
+
+        textures.addTexturesFromWadFile(filename.FullName());
+        updateTextureBrowser();
+
+        setStatus(-1.0f, "");
+    });
+
+    t.detach();
+}
+
+void Program::addTexturesFromBsp(System::IO::FileInfo const &filename)
+{
+    std::thread t([this, filename]() mutable {
+        setStatus(-1.0f, std::string("loading ") + filename.Name() + "...");
+
+        textures.addTexturesFromBspFile(filename.FullName());
+        updateTextureBrowser();
+
+        setStatus(-1.0f, "");
+    });
+
+    t.detach();
+}
+
 void Program::addTexturesFromPath(System::IO::DirectoryInfo const &path)
 {
-    for (auto file : path.GetFiles())
+    int c = 0;
+    auto files = path.GetFiles();
+    for (auto file : files)
     {
         auto fileInfo = System::IO::FileInfo(System::IO::Path::Combine(path.FullName(), file));
-        if (fileInfo.Extension() == ".wad")
+        if (fileInfo.Extension() == ".wad" || fileInfo.Extension() == ".WAD")
         {
-            textures.addTexturesFromWadFile(fileInfo.FullName());
+            setStatus(float(c) / float(files.size()), std::string("loading ") + file + "...");
+
+            addTexturesFromWad(fileInfo);
+        }
+        else if (fileInfo.Extension() == ".bsp" || fileInfo.Extension() == ".BSP")
+        {
+            setStatus(float(c) / float(files.size()), std::string("loading ") + file + "...");
+
+            addTexturesFromBsp(fileInfo);
         }
     }
 }
 
-void Program::populateTextureManagerFromOptions(std::string const &hlExecutablePath)
+void Program::populateTextureManagerFromOptions(System::IO::FileInfo const &hl)
 {
-    auto hl = System::IO::FileInfo(hlExecutablePath);
-    auto hlPath = hl.Directory();
-    for (auto sub : hlPath.GetDirectories())
-    {
-        auto subPath = System::IO::DirectoryInfo(System::IO::Path::Combine(hlPath.FullName(), sub));
+    std::thread t([this, hl]() mutable {
+        auto hlPath = hl.Directory();
 
-        addTexturesFromPath(subPath);
-    }
+        std::vector<System::IO::FileInfo> wadfilesToLoad;
+        auto dirs = hlPath.GetDirectories();
+        for (auto sub : dirs)
+        {
+            System::IO::DirectoryInfo path(System::IO::Path::Combine(hlPath.FullName(), sub));
+            auto files = path.GetFiles();
+            for (auto file : files)
+            {
+                auto fileInfo = System::IO::FileInfo(System::IO::Path::Combine(path.FullName(), file));
+                wadfilesToLoad.push_back(fileInfo);
+            }
+        }
 
-    state.foundTextures = textures.findTextures("");
+        int c = 0;
+        for (auto fileInfo : wadfilesToLoad)
+        {
+            if (fileInfo.Extension() == ".wad" || fileInfo.Extension() == ".WAD")
+            {
+                setStatus(float(c) / float(wadfilesToLoad.size()), std::string("loading ") + fileInfo.Name() + "...");
+
+                textures.addTexturesFromWadFile(fileInfo.FullName());
+
+                updateTextureBrowser();
+            }
+            c++;
+        }
+
+        setStatus(-1.0f, "");
+    });
+
+    t.detach();
+}
+
+void Program::setStatus(float state, std::string const &message)
+{
+    std::lock_guard<std::mutex> lock(_statusbarMutex);
+
+    _statusProgress = state;
+    _statusMessage = message;
 }
 
 bool Program::SetUp()
@@ -59,22 +160,7 @@ bool Program::SetUp()
     modal.message = "";
 
     ImGuiIO &io = ImGui::GetIO();
-    if (io.Fonts->AddFontFromFileTTF("Roboto-Medium.ttf", 16.0f) == nullptr)
-    {
-        return false;
-    }
-
-    ImFontConfig config;
-    config.MergeMode = true;
-
-    static const ImWchar icons_ranges_fontawesome[] = {0xf000, 0xf3ff, 0};
-    if (io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 22.0f, &config, icons_ranges_fontawesome) == nullptr)
-    {
-        return false;
-    }
-
-    static const ImWchar icons_ranges_googleicon[] = {0xe000, 0xeb4c, 0};
-    if (io.Fonts->AddFontFromFileTTF("MaterialIcons-Regular.ttf", 24.0f, &config, icons_ranges_googleicon) == nullptr)
+    if (io.Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\verdana.ttf", 16.0f) == nullptr)
     {
         return false;
     }
@@ -91,18 +177,18 @@ void Program::onResize(int width, int height)
 void Program::renderGuiTextureView(Texture *texture)
 {
     auto browserWidth = state.width > 700 ? 550 : 275;
-    auto textureWidth = state.width  - browserWidth;
+    auto textureWidth = state.width - browserWidth;
     if (texture != nullptr)
     {
         ImGui::Begin("TextureView", &state.show_texture_view, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         {
-            ImGui::SetWindowPos(ImVec2(browserWidth, 22));
-            ImGui::SetWindowSize(ImVec2(textureWidth, state.height - 22));
+            ImGui::SetWindowPos(ImVec2(browserWidth, menubarHeight));
+            ImGui::SetWindowSize(ImVec2(textureWidth, state.height - menubarHeight - statusbarHeight));
 
             std::stringstream ss;
             ss << texture->name() << " (" << texture->width() << "x" << texture->height() << ")";
             ImGui::Text(ss.str().c_str());
-            ImGui::SameLine(ImGui::GetWindowWidth()-70);
+            ImGui::SameLine(ImGui::GetWindowWidth() - 70);
             if (ImGui::Button("Export", ImVec2(70, 30)))
             {
                 if (exportTexture(texture))
@@ -127,7 +213,7 @@ void Program::renderGuiTextureView(Texture *texture)
 
 void Program::Render()
 {
-    glViewport(0, 0, state.width, state.height);
+    glViewport(0, menubarHeight, state.width, state.height - menubarHeight - statusbarHeight);
     glClearColor(114 / 255.0f, 144 / 255.0f, 154 / 255.0f, 255 / 255.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -148,6 +234,23 @@ void Program::Render()
                 state.currentTexture = tex;
             }
             renderGuiTextureView(state.currentTexture);
+
+            ImGui::Begin("statusbar", nullptr, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+            {
+                std::lock_guard<std::mutex> lock(_statusbarMutex);
+                ImGui::SetWindowPos(ImVec2(0, state.height - statusbarHeight));
+                ImGui::SetWindowSize(ImVec2(state.width, statusbarHeight));
+
+                ImGui::Columns(2);
+                ImGui::Text(_statusMessage.c_str());
+                ImGui::NextColumn();
+                if (_statusProgress >= 0.0f)
+                {
+                    ImGui::ProgressBar(_statusProgress);
+                }
+                ImGui::NextColumn();
+            }
+            ImGui::End();
         }
         ImGui::PopStyleColor();
     }

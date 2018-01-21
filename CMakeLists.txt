@@ -22,6 +22,10 @@ add_executable(goldsrc-textures
     src/wadfile.h
     src/wadtexture.cpp
     src/wadtexture.h
+    src/bspfile.cpp
+    src/bspfile.h
+    src/bsptexture.cpp
+    src/bsptexture.h
     lib/imgui/imgui.cpp
     lib/imgui/imgui_draw.cpp
     src/imgui_impl_glfw_gl3.cpp
@@ -35,6 +39,7 @@ add_executable(goldsrc-textures
     src/noc_file_dialog.cpp
     include/stb_image_write.h
     include/noc_file_dialog.h
+    resource.rc
     )
 
 target_include_directories(goldsrc-textures
@@ -48,6 +53,7 @@ target_compile_features(goldsrc-textures
     PRIVATE cxx_auto_type
     PRIVATE cxx_nullptr
     PRIVATE cxx_lambdas
+    PRIVATE cxx_thread_local
     )
 
 

@@ -15,20 +15,20 @@ typedef struct sBSPMipTexHeader
 } tBSPMipTexHeader;
 
 WadTexture::WadTexture(std::string const &name, TexturePackage *package, unsigned char *miptexData)
-    : Texture(name, package), _miptexData(miptexData)
+    : Texture(name, package), _pixels(getPixels(miptexData))
 {
 }
 
-unsigned char* WadTexture::getPixels()
+unsigned char *WadTexture::getPixels(unsigned char *miptexData)
 {
-    if (_miptexData == nullptr)
+    if (miptexData == nullptr)
     {
         return nullptr;
     }
 
-    auto miptex = (tBSPMipTexHeader *)_miptexData;
+    auto miptex = (tBSPMipTexHeader *)miptexData;
 
-    if (miptex->height <= 0 || miptex->height > 1024 || miptex->width <= 0 || miptex->width  > 1024)
+    if (miptex->height <= 0 || miptex->height > 1024 || miptex->width <= 0 || miptex->width > 1024)
     {
         return nullptr;
     }
@@ -41,8 +41,8 @@ unsigned char* WadTexture::getPixels()
     int paletteOffset = miptex->offsets[0] + size + (size / 4) + (size / 16) + (size / 64) + sizeof(short);
 
     // Get the miptex data and palette
-    auto source0 = _miptexData + miptex->offsets[0];
-    auto palette = _miptexData + paletteOffset;
+    auto source0 = miptexData + miptex->offsets[0];
+    auto palette = miptexData + paletteOffset;
 
     auto pixels = new unsigned char[size * bpp];
 
@@ -69,19 +69,17 @@ unsigned char* WadTexture::getPixels()
 
 bool WadTexture::writeToFile(std::string const &filename)
 {
-    auto pixels = getPixels();
-    if (pixels == nullptr)
+    if (_pixels == nullptr)
     {
         return false;
     }
 
-    return stbi_write_bmp(filename.c_str(), width(), height(), 4, pixels);
+    return stbi_write_bmp(filename.c_str(), width(), height(), 4, _pixels);
 }
 
 bool WadTexture::upload()
 {
-    auto pixels = getPixels();
-    if (pixels == nullptr)
+    if (_pixels == nullptr)
     {
         return false;
     }
@@ -92,8 +90,7 @@ bool WadTexture::upload()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    delete[] pixels;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -102,10 +99,10 @@ bool WadTexture::upload()
 
 void WadTexture::cleanup()
 {
-    if (_miptexData != nullptr)
+    if (_pixels != nullptr)
     {
-        delete[] _miptexData;
-        _miptexData = nullptr;
+        delete[] _pixels;
+        _pixels = nullptr;
     }
 
     if (_glId > 0)

@@ -31,6 +31,8 @@ bool TextureManager::addTexture(Texture *texture)
         return false;
     }
 
+    std::lock_guard<std::mutex> lock(_mutex);
+
     _textures.insert(std::make_pair(texture->name(), texture));
 
     return true;
@@ -38,6 +40,8 @@ bool TextureManager::addTexture(Texture *texture)
 
 std::map<std::string, std::vector<Texture *>> TextureManager::findTextures(std::string const &searchFor)
 {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     std::map<std::string, std::vector<Texture *>> result;
 
     for (auto pair : _textures)
@@ -68,7 +72,26 @@ bool TextureManager::addTexturesFromWadFile(std::string const &filepath)
         return false;
     }
 
+    std::lock_guard<std::mutex> lock(_mutex);
+
     _wadfiles.insert(std::make_pair(filepath, wadFile));
+
+    return true;
+}
+
+bool TextureManager::addTexturesFromBspFile(std::string const &filepath)
+{
+    auto bspFile = new BspFile();
+
+    if (!bspFile->load(filepath, this))
+    {
+        delete bspFile;
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    _bspfiles.insert(std::make_pair(filepath, bspFile));
 
     return true;
 }

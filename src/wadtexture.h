@@ -5,9 +5,9 @@
 
 class WadTexture : public Texture
 {
-    unsigned char *_miptexData;
+    unsigned char *_pixels;
 
-    unsigned char* getPixels();
+    unsigned char* getPixels(unsigned char *miptexData);
 public:
     WadTexture(std::string const &name, class TexturePackage *package, unsigned char *miptexData);
 

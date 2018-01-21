@@ -65,28 +65,29 @@ bool Program::openAsset()
     // In time, we also should add the following two file types:
     // * Half-Life BSP file (*.bsp)\0*.bsp\0
     // * Half-Life MDL file (*.mdl)\0*.mdl\0
-    const char *filer = "Half-Life WAD file (*.wad)\0*.wad\0Half-Life executable (hl.exe)\0hl.exe\0Half-Life BSP file (*.bsp)\0*.bsp\0";
+    const char *filer = "All compatible files (*.wad, *.bsp, hl.exe)\0*.wad;*.bsp;hl.exe\0Half-Life WAD file (*.wad)\0*.wad\0Half-Life BSP file (*.bsp)\0*.bsp\0Half-Life executable (hl.exe)\0hl.exe\0";
     const char *file = noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, filer, nullptr, nullptr);
     if (file != nullptr)
     {
         auto fileInfo = System::IO::FileInfo(file);
         if (fileInfo.Name() == "hl.exe")
         {
-            populateTextureManagerFromOptions(file);
+            populateTextureManagerFromOptions(fileInfo);
 
             return true;
         }
         else if (fileInfo.Extension() == ".wad" || fileInfo.Extension() == ".WAD")
         {
-            textures.addTexturesFromWadFile(fileInfo.FullName());
-
-            state.foundTextures = textures.findTextures("");
+            addTexturesFromWad(fileInfo);
 
             return true;
         }
-//        else if (fileInfo.Extension() == ".bsp" || fileInfo.Extension() == ".BSP")
-//        {
-//        }
+        else if (fileInfo.Extension() == ".bsp" || fileInfo.Extension() == ".BSP")
+        {
+            addTexturesFromBsp(fileInfo);
+
+            return true;
+        }
 //        else if (fileInfo.Extension() == ".mdl" || fileInfo.Extension() == ".mdl")
 //        {
 //        }

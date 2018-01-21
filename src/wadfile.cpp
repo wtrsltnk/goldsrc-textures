@@ -83,9 +83,13 @@ bool WadFile::load(const std::string &filePath, TextureManager *textureManager)
         // And pass the data to the texture class who now owns the data and should cleanup
         auto texture = new WadTexture(lumps[i].name, this, lumpData);
         textureManager->addTexture(texture);
+
+        delete[] lumpData;
     }
 
     stream.close();
+
+    delete[] lumps;
 
     return true;
 }

@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
+#include <thread>
 
 using namespace std;
 
@@ -48,6 +49,18 @@ int main(int argc, char *argv[])
 
     if (app.SetUp())
     {
+        if (argc > 1)
+        {
+            std::thread t([argc, argv, &app]() mutable {
+                System::IO::FileInfo inputFile(argv[1]);
+                if (inputFile.Exists())
+                {
+                    app.SetInputFile(inputFile);
+                }
+            });
+            t.detach();
+        }
+
         while (glfwWindowShouldClose(window) == 0 && app._running)
         {
             glfwWaitEvents();

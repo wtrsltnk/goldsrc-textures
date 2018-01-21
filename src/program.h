@@ -22,6 +22,7 @@ struct app_state
     bool ctrlPressed = false;
     std::map<std::string, std::vector<Texture *>> foundTextures;
     Texture *currentTexture = nullptr;
+    char search_for[45];
 };
 
 struct message_modal
@@ -35,12 +36,25 @@ class Program
 private:
     GLFWwindow *_window;
 
+    const int menubarHeight = 22;
+    const int statusbarHeight = 40;
+
+    std::mutex _stateMutex;
+    void updateTextureBrowser();
+
     app_state state;
     message_modal modal;
     TextureManager textures;
 
-    void populateTextureManagerFromOptions(std::string const &hlExecutablePath);
+    std::mutex _statusbarMutex;
+    std::string _statusMessage;
+    float _statusProgress;
+    void setStatus(float state, std::string const &message);
+
+    void populateTextureManagerFromOptions(System::IO::FileInfo const &hlExecutablePath);
     void addTexturesFromPath(System::IO::DirectoryInfo const &path);
+    void addTexturesFromWad(System::IO::FileInfo const &filename);
+    void addTexturesFromBsp(System::IO::FileInfo const &filename);
 
     void renderGuiMenu();
     void renderGuiAbout();
@@ -68,6 +82,8 @@ protected:
 public:
     Program(GLFWwindow *window);
     virtual ~Program();
+
+    void SetInputFile(System::IO::FileInfo const &file);
 
     bool SetUp();
     void Render();
