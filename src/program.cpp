@@ -19,9 +19,8 @@
 #include <vector>
 
 Program::Program(GLFWwindow *window)
-    : _window(window), _running(true), _statusProgress(-1.0f)
+    : _window(window), _statusProgress(-1.0f), _running(true)
 {
-    std::lock_guard<std::mutex> lock(_stateMutex);
     state.search_for[0] = '\0';
 
     glfwSetWindowUserPointer(this->_window, static_cast<void *>(this));
@@ -34,8 +33,6 @@ Program::~Program()
 
 void Program::updateTextureBrowser()
 {
-    std::lock_guard<std::mutex> lock(_stateMutex);
-
     // this makes sure there are textures shown
     state.foundTextures = textures.findTextures(state.search_for);
 }
@@ -148,8 +145,6 @@ void Program::populateTextureManagerFromOptions(System::IO::FileInfo const &hl)
 
 void Program::setStatus(float state, std::string const &message)
 {
-    std::lock_guard<std::mutex> lock(_statusbarMutex);
-
     _statusProgress = state;
     _statusMessage = message;
 }
@@ -187,7 +182,7 @@ void Program::renderGuiTextureView(Texture *texture)
 
             std::stringstream ss;
             ss << texture->name() << " (" << texture->width() << "x" << texture->height() << ")";
-            ImGui::Text(ss.str().c_str());
+            ImGui::Text("%s", ss.str().c_str());
             ImGui::SameLine(ImGui::GetWindowWidth() - 70);
             if (ImGui::Button("Export", ImVec2(70, 30)))
             {
@@ -235,14 +230,14 @@ void Program::Render()
             }
             renderGuiTextureView(state.currentTexture);
 
-            ImGui::Begin("statusbar", nullptr, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+            ImGui::Begin("statusbar", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
             {
                 std::lock_guard<std::mutex> lock(_statusbarMutex);
                 ImGui::SetWindowPos(ImVec2(0, state.height - statusbarHeight));
                 ImGui::SetWindowSize(ImVec2(state.width, statusbarHeight));
 
                 ImGui::Columns(2);
-                ImGui::Text(_statusMessage.c_str());
+                ImGui::Text("%s", _statusMessage.c_str());
                 ImGui::NextColumn();
                 if (_statusProgress >= 0.0f)
                 {

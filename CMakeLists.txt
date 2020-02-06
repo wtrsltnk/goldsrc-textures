@@ -46,6 +46,7 @@ target_include_directories(goldsrc-textures
     PRIVATE include
     PRIVATE lib/glfw/include
     PRIVATE lib/imgui
+    PRIVATE lib/glm
     PRIVATE lib/system.io/include
     )
 
