@@ -1,15 +1,67 @@
 cmake_minimum_required(VERSION 3.7)
 
+include(cmake/CPM.cmake)
+
 project(goldsrc-textures)
 
-find_package(GLM REQUIRED)
-find_package(OpenGL REQUIRED)
+CPMAddPackage(
+    NAME glm
+    GITHUB_REPOSITORY g-truc/glm
+    GIT_TAG 0.9.9.7
+)
 
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
-add_subdirectory(lib/glfw)
+CPMAddPackage(
+    NAME glfw
+    GITHUB_REPOSITORY "glfw/glfw"
+    GIT_TAG 3.3.8
+    GIT_SHALLOW ON
+    OPTIONS
+        "BUILD_SHARED_LIBS Off"
+        "GLFW_BUILD_EXAMPLES Off"
+        "GLFW_BUILD_TESTS Off"
+        "GLFW_BUILD_DOCS Off"
+        "GLFW_INSTALL Off"
+)
+
+CPMAddPackage(
+    NAME imgui
+    GIT_TAG docking
+    GITHUB_REPOSITORY ocornut/imgui
+    DOWNLOAD_ONLY True
+)
+
+if (imgui_ADDED)
+    message(STATUS "Adding IMGui: ${imgui_SOURCE_DIR}")
+    add_library(imgui STATIC
+        "${imgui_SOURCE_DIR}/imgui.cpp"
+        "${imgui_SOURCE_DIR}/imgui_demo.cpp"
+        "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+        "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+        "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+        "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp"
+        "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp"
+    )
+
+    target_include_directories(imgui
+        PUBLIC
+            "include"
+            "${imgui_SOURCE_DIR}/"
+    )
+
+    target_link_libraries(imgui
+        PRIVATE
+            glfw
+    )
+
+    target_compile_options(imgui
+        PUBLIC
+            -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+    )
+else()
+    message(FATAL_ERROR "IMGUI not found")
+endif()
+
+find_package(OpenGL REQUIRED)
 
 add_executable(goldsrc-textures
     src/texturemanager.cpp
@@ -26,11 +78,8 @@ add_executable(goldsrc-textures
     src/bspfile.h
     src/bsptexture.cpp
     src/bsptexture.h
-    lib/imgui/imgui.cpp
-    lib/imgui/imgui_draw.cpp
-    src/imgui_impl_glfw_gl3.cpp
-    include/imgui_impl_glfw_gl3.h
     src/main.cpp
+    src/glad.c
     src/program.cpp
     src/program-about.cpp
     src/program-menu.cpp
@@ -40,33 +89,23 @@ add_executable(goldsrc-textures
     include/stb_image_write.h
     include/noc_file_dialog.h
     resource.rc
-    )
+)
 
 target_include_directories(goldsrc-textures
     PRIVATE include
-    PRIVATE lib/glfw/include
-    PRIVATE lib/imgui
-    PRIVATE lib/glm
     PRIVATE lib/system.io/include
-    )
+)
 
 target_compile_features(goldsrc-textures
     PRIVATE cxx_auto_type
     PRIVATE cxx_nullptr
     PRIVATE cxx_lambdas
     PRIVATE cxx_thread_local
-    )
+)
 
 
 target_link_libraries(goldsrc-textures
-    ${OPENGL_LIBRARIES}
+    glm
     glfw
-    )
-
-ADD_CUSTOM_COMMAND(
-    TARGET goldsrc-textures
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/lib/imgui/extra_fonts/Roboto-Medium.ttf ${CMAKE_BINARY_DIR}/Roboto-Medium.ttf
-    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/fontawesome-webfont.ttf ${CMAKE_BINARY_DIR}/fontawesome-webfont.ttf
-    COMMAND ${CMAKE_COMMAND} -E copy ARGS ${CMAKE_SOURCE_DIR}/MaterialIcons-Regular.ttf ${CMAKE_BINARY_DIR}/MaterialIcons-Regular.ttf
+    imgui
 )

@@ -1,6 +1,7 @@
 #include "wadtexture.h"
 #include "wadfile.h"
-#include <GL/glextl.h>
+
+#include <glad/glad.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>

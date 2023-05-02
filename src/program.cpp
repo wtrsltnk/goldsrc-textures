@@ -1,9 +1,9 @@
 #include "program.h"
 
-#include <GL/glextl.h>
 #include <imgui.h>
-#include <imgui_impl_glfw_gl3.h>
 #include <imgui_internal.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
 
 #define SYSTEM_IO_FILEINFO_IMPLEMENTATION
 #include <system.io.fileinfo.h>
@@ -199,7 +199,7 @@ void Program::renderGuiTextureView(Texture *texture)
                     ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
             }
-            auto aspect = glm::min((textureWidth) / texture->width(), (state.height - 100) / texture->height());
+            auto aspect = glm::min<float>((textureWidth) / texture->width(), (state.height - 100) / texture->height());
             ImGui::Image((void *)texture->glId(), ImVec2(texture->width() * aspect, texture->height() * aspect));
         }
         ImGui::End();
@@ -215,7 +215,9 @@ void Program::Render()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    ImGui_ImplGlfwGL3_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 1.0f);
     {
@@ -252,6 +254,7 @@ void Program::Render()
     ImGui::PopStyleVar();
 
     ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Program::onKeyAction(int key, int scancode, int action, int mods)
@@ -287,7 +290,7 @@ void Program::CleanUp() {}
 
 void Program::KeyActionCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mods);
+    //ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mods);
 
     auto app = static_cast<Program *>(glfwGetWindowUserPointer(window));
 
@@ -305,7 +308,7 @@ void Program::CursorPosCallback(GLFWwindow *window, double x, double y)
 
 void Program::ScrollCallback(GLFWwindow *window, double x, double y)
 {
-    ImGui_ImplGlfwGL3_ScrollCallback(window, x, y);
+    //ImGui_ImplGlfwGL3_ScrollCallback(window, x, y);
 
     auto app = static_cast<Program *>(glfwGetWindowUserPointer(window));
 
@@ -315,7 +318,7 @@ void Program::ScrollCallback(GLFWwindow *window, double x, double y)
 
 void Program::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
-    ImGui_ImplGlfwGL3_MouseButtonCallback(window, button, action, mods);
+    //ImGui_ImplGlfwGL3_MouseButtonCallback(window, button, action, mods);
 
     auto app = static_cast<Program *>(glfwGetWindowUserPointer(window));
 

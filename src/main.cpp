@@ -1,12 +1,13 @@
 
 #include "program.h"
 
-#define GLEXTL_IMPLEMENTATION
-#include <GL/glextl.h>
+#include <glad/glad.h>
+
 #include <GLFW/glfw3.h>
 
 #include <imgui.h>
-#include <imgui_impl_glfw_gl3.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
 #include <thread>
 
 using namespace std;
@@ -32,9 +33,6 @@ int main(int argc, char *argv[])
 
     Program app(window);
 
-    // Setup ImGui binding
-    ImGui_ImplGlfwGL3_Init(window, true);
-
     glfwSetKeyCallback(window, Program::KeyActionCallback);
     glfwSetCursorPosCallback(window, Program::CursorPosCallback);
     glfwSetScrollCallback(window, Program::ScrollCallback);
@@ -43,7 +41,15 @@ int main(int argc, char *argv[])
     glfwSetWindowSizeCallback(window, Program::ResizeCallback);
     glfwMakeContextCurrent(window);
 
-    glExtLoadAll((PFNGLGETPROC *)glfwGetProcAddress);
+    gladLoadGL();
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+
+           // Setup ImGui binding
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 150");
 
     Program::ResizeCallback(window, 1024, 768);
 
